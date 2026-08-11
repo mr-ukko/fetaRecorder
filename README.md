@@ -14,7 +14,7 @@ Keep in mind code is currently under production so it is not in a state that it 
 * **Compiler:** C++17 compatible compiler (MSVC 2019+ (Recomended as code uses atlbase which is included), GCC 10+, or Clang)
 
 ## Planned features
-
+* Fix saturation problem with video
 * Configs to change fps, recording length, key binds, file name and saving location.
 * Make window functional and not just barebones with wrong text
 * Clean up code and possible documentation as currently code is held together with duct tape.
