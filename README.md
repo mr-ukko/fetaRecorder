@@ -1,7 +1,7 @@
 # fetaRecorder
-*Screen recording app that records last few seconds that happened.
-*Records last 10 sec with 60 fps after button press and saves it in \\Pictures\\Videos and as Testt.mp4. Can be changed inside the code.
-*Keep in mind code is currently under production so it is not in a state that it should be but works at least partly the way its intended.
+* Screen recording app that records last few seconds that happened.
+* Records last 10 sec with 60 fps after button press and saves it in \\Pictures\\Videos and as Testt.mp4. Can be changed inside the code.
+* Keep in mind code is currently under production so it is not in a state that it should be but works at least partly the way its intended.
 
 ## Features
 
