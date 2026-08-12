@@ -42,7 +42,7 @@ This project uses the **Qt Framework** under the terms of the **GNU Lesser Gener
 ### Using Command Line (CMake)
 ```bash
 # Clone the repository
-git clone [https://github.com/your-username/your-repo.name.git](https://github.com/your-username/your-repo.name.git)
+git clone [https://github.com/Zoponen/fetaRecorder.git](https://github.com/Zoponen/fetaRecorder.git)
 cd your-repo-name
 
 # Configure and build
