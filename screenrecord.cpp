@@ -6,9 +6,8 @@
 #include <wmcodecdsp.h>
 #include <mferror.h>
 #include <mfreadwrite.h>
-#include <string>
+#include <Qstring>
 #include <QString>
-#include <iostream>
 
 #pragma comment(lib, "mfplat.lib")      
 #pragma comment(lib, "mfuuid.lib")      
@@ -19,18 +18,18 @@
 
 bool ScreenRecord::InitializeDXGI() {
     // STEP 1: Find GPU Adapter
-    CComPtr<IDXGIFactory1> pFactory;
+    QPointer<IDXGIFactory1> pFactory;
     HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&pFactory);
     if (FAILED(hr)) return false;
 
-    CComPtr<IDXGIAdapter1> targetAdapter;
-    CComPtr<IDXGIOutput> targetOutput;
+    QPointer<IDXGIAdapter1> targetAdapter;
+    QPointer<IDXGIOutput> targetOutput;
 
     for (UINT adapterIdx = 0; pFactory->EnumAdapters1(adapterIdx, &targetAdapter) != DXGI_ERROR_NOT_FOUND; ++adapterIdx) {
         if (targetAdapter->EnumOutputs(0, &targetOutput) != DXGI_ERROR_NOT_FOUND) {
             break;
         }
-        targetAdapter.Release();
+        targetAdapter->Release();
     }
 
     if (!targetAdapter || !targetOutput) {
@@ -60,13 +59,13 @@ bool ScreenRecord::InitializeDXGI() {
     }
 
     // Enable Thread Protection on D3D11 Context
-    CComPtr<ID3D10Multithread> pMultithread;
+    QPointer<ID3D10Multithread> pMultithread;
     if (SUCCEEDED(m_d3d11Device->QueryInterface(__uuidof(ID3D10Multithread), (void**)&pMultithread))) {
         pMultithread->SetMultithreadProtected(TRUE);
     }
 
     // STEP 3: Bind Desktop Duplication
-    CComPtr<IDXGIOutput1> dxgiOutput1;
+    QPointer<IDXGIOutput1> dxgiOutput1;
     hr = targetOutput->QueryInterface(__uuidof(IDXGIOutput1), (void**)&dxgiOutput1);
     if (FAILED(hr)) return false;
 
@@ -80,7 +79,7 @@ bool ScreenRecord::InitializeDXGI() {
     hr = CoCreateInstance(CLSID_CMSH264EncoderMFT, nullptr, CLSCTX_INPROC_SERVER, IID_IMFTransform, (void**)&pEncoderTransform);
     if (FAILED(hr) || !pEncoderTransform) return false;
 
-    CComPtr<IMFDXGIDeviceManager> pDXGIManager;
+    QPointer<IMFDXGIDeviceManager> pDXGIManager;
     UINT resetToken = 0;
     if (SUCCEEDED(MFCreateDXGIDeviceManager(&resetToken, &pDXGIManager))) {
         pDXGIManager->ResetDevice(m_d3d11Device, resetToken);
@@ -88,7 +87,7 @@ bool ScreenRecord::InitializeDXGI() {
     }
 
     // Output Type (H.264)
-    CComPtr<IMFMediaType> pOutputType;
+    QPointer<IMFMediaType> pOutputType;
     MFCreateMediaType(&pOutputType);
     pOutputType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
     pOutputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
@@ -100,7 +99,7 @@ bool ScreenRecord::InitializeDXGI() {
     if (FAILED(pEncoderTransform->SetOutputType(0, pOutputType, 0))) return false;
 
     // Input Type (NV12)
-    CComPtr<IMFMediaType> pInputType;
+    QPointer<IMFMediaType> pInputType;
     MFCreateMediaType(&pInputType);
     pInputType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
     pInputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_NV12);
@@ -177,7 +176,7 @@ void ScreenRecord::takeFrame(ID3D11Device* device, ID3D11DeviceContext* context,
     inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
     inputViewDesc.Texture2D.MipSlice = 0;
 
-    CComPtr<ID3D11VideoProcessorInputView> inputView;
+    QPointer<ID3D11VideoProcessorInputView> inputView;
     HRESULT hr = m_videoDevice->CreateVideoProcessorInputView(m_readableBgraTexture, m_vpEnum, &inputViewDesc, &inputView);
     if (FAILED(hr)) {
         qWarning() << "CreateVideoProcessorInputView failed with hr:" << Qt::hex << hr;
@@ -188,7 +187,7 @@ void ScreenRecord::takeFrame(ID3D11Device* device, ID3D11DeviceContext* context,
     outputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
     outputViewDesc.Texture2D.MipSlice = 0;
 
-    CComPtr<ID3D11VideoProcessorOutputView> outputView;
+    QPointer<ID3D11VideoProcessorOutputView> outputView;
     hr = m_videoDevice->CreateVideoProcessorOutputView(m_nv12Texture, m_vpEnum, &outputViewDesc, &outputView);
     if (FAILED(hr)) {
         qWarning() << "CreateVideoProcessorOutputView failed with hr:" << Qt::hex << hr;
@@ -212,7 +211,7 @@ void ScreenRecord::compressFrame(ID3D11Texture2D* text2D) {
     if (!pEncoderTransform || !text2D) return;
 
     // STEP 1: Wrap NV12 Texture in an IMFMediaBuffer
-    CComPtr<IMFMediaBuffer> pBuffer;
+    QPointer<IMFMediaBuffer> pBuffer;
     HRESULT hr = MFCreateDXGISurfaceBuffer(__uuidof(ID3D11Texture2D), text2D, 0, FALSE, &pBuffer);
     if (FAILED(hr) || !pBuffer) {
         qWarning() << "MFCreateDXGISurfaceBuffer failed with hr:" << Qt::hex << hr;
@@ -220,7 +219,7 @@ void ScreenRecord::compressFrame(ID3D11Texture2D* text2D) {
     }
 
     // STEP 2: Create IMFSample and attach timing metadata
-    CComPtr<IMFSample> pSample;
+    QPointer<IMFSample> pSample;
     hr = MFCreateSample(&pSample);
     if (FAILED(hr) || !pSample) return;
 
@@ -249,7 +248,7 @@ void ScreenRecord::compressFrame(ID3D11Texture2D* text2D) {
 void ScreenRecord::extractAndQueueCompressedBytes(IMFSample* pSample) {
     if (!pSample) return;
 
-    CComPtr<IMFMediaBuffer> pMediaBuffer;
+    QPointer<IMFMediaBuffer> pMediaBuffer;
     HRESULT hr = pSample->GetBufferByIndex(0, &pMediaBuffer);
     if (FAILED(hr) || !pMediaBuffer) return;
 
@@ -270,11 +269,11 @@ void ScreenRecord::extractAndQueueCompressedBytes(IMFSample* pSample) {
         frame.isKeyFrame = (isKeyframe != 0);
 
         {
-            std::lock_guard<std::mutex> lock(accessMutex);
+            accessMutex.lock();
             if (pressedFrameBelt.size() >= static_cast<size_t>(maxQueueL)) {
-                pressedFrameBelt.pop();
+                pressedFrameBelt.pop_back();
             }
-            pressedFrameBelt.push(frame);
+            pressedFrameBelt.push_front(frame);
         }
     }
 
@@ -291,10 +290,10 @@ void ScreenRecord::drainEncoder() {
         MFT_OUTPUT_DATA_BUFFER outputContainer = {};
         outputContainer.dwStreamID = 0;
 
-        CComPtr<IMFSample> pOutSample;
+        QPointer<IMFSample> pOutSample;
         if (!(streamInfo.dwFlags & MFT_OUTPUT_STREAM_PROVIDES_SAMPLES)) {
             MFCreateSample(&pOutSample);
-            CComPtr<IMFMediaBuffer> pOutBuf;
+            QPointer<IMFMediaBuffer> pOutBuf;
             DWORD bufSize = (streamInfo.cbSize > 0) ? streamInfo.cbSize : (1024 * 1024);
             MFCreateMemoryBuffer(bufSize, &pOutBuf);
             pOutSample->AddBuffer(pOutBuf);
@@ -312,7 +311,7 @@ void ScreenRecord::drainEncoder() {
 }
 
 HRESULT ScreenRecord::InitializeSinkWriter(const wchar_t* outputFilePath) {
-    CComPtr<IMFAttributes> pAttributes;
+    QPointer<IMFAttributes> pAttributes;
     MFCreateAttributes(&pAttributes, 2);
     pAttributes->SetUINT32(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, TRUE);
     pAttributes->SetUINT32(MF_LOW_LATENCY, TRUE);
@@ -321,7 +320,7 @@ HRESULT ScreenRecord::InitializeSinkWriter(const wchar_t* outputFilePath) {
     if (FAILED(hr)) return hr;
 
     // 1. MP4 Output Container Type
-    CComPtr<IMFMediaType> pMediaType;
+    QPointer<IMFMediaType> pMediaType;
     MFCreateMediaType(&pMediaType);
     pMediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
     pMediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
@@ -347,7 +346,7 @@ HRESULT ScreenRecord::compileFrames(const wchar_t* outputFilePath, uint32_t widt
         drainEncoder();
     }
 
-    std::lock_guard<std::mutex> lock(accessMutex);
+    accessMutex.lock();
     if (pressedFrameBelt.empty()) {
         qWarning() << "Cannot write MP4: Frame queue is empty!";
         return E_FAIL;
@@ -355,7 +354,7 @@ HRESULT ScreenRecord::compileFrames(const wchar_t* outputFilePath, uint32_t widt
 
     // Discard leading non-keyframes so video playback begins smoothly
     while (!pressedFrameBelt.empty() && !pressedFrameBelt.front().isKeyFrame) {
-        pressedFrameBelt.pop();
+        pressedFrameBelt.pop_back();
     }
 
     if (pressedFrameBelt.empty()) {
@@ -375,11 +374,11 @@ HRESULT ScreenRecord::compileFrames(const wchar_t* outputFilePath, uint32_t widt
 
     while (!pressedFrameBelt.empty()) {
         CompressedFrame frame = std::move(pressedFrameBelt.front());
-        pressedFrameBelt.pop();
+        pressedFrameBelt.pop_back();
 
         if (frame.h264Bytes.empty()) continue;
 
-        CComPtr<IMFMediaBuffer> pBuffer;
+        QPointer<IMFMediaBuffer> pBuffer;
         hr = MFCreateMemoryBuffer(static_cast<DWORD>(frame.h264Bytes.size()), &pBuffer);
         if (FAILED(hr)) break;
 
@@ -390,7 +389,7 @@ HRESULT ScreenRecord::compileFrames(const wchar_t* outputFilePath, uint32_t widt
             pBuffer->SetCurrentLength(static_cast<DWORD>(frame.h264Bytes.size()));
         }
 
-        CComPtr<IMFSample> pSample;
+        QPointer<IMFSample> pSample;
         hr = MFCreateSample(&pSample);
         if (FAILED(hr)) break;
         pSample->AddBuffer(pBuffer);
@@ -452,7 +451,7 @@ void ScreenRecord::CaptureNextFrame() {
     if (!m_desktopDuplication) return;
 
     DXGI_OUTDUPL_FRAME_INFO frameInfo = {};
-    CComPtr<IDXGIResource> desktopResource;
+    QPointer<IDXGIResource> desktopResource;
 
     HRESULT hr = m_desktopDuplication->AcquireNextFrame(10, &frameInfo, &desktopResource);
 
@@ -466,7 +465,7 @@ void ScreenRecord::CaptureNextFrame() {
         return;
     }
 
-    CComPtr<ID3D11Texture2D> frameTexture;
+    QPointer<ID3D11Texture2D> frameTexture;
     hr = desktopResource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&frameTexture);
 
     if (SUCCEEDED(hr) && frameTexture) {

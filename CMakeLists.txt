@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 
 project(Fetakuvaaja VERSION 0.1 LANGUAGES CXX)
 
-set(CMAKE_PREFIX_PATH "O:/Code/packages/QT/6.11.1/msvc2022_64")
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -17,17 +15,20 @@ find_package(Qt6 6.8 REQUIRED COMPONENTS Gui Qml Quick Core Widgets)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
-qt_add_executable(appFetakuvaaja
+qt6_add_executable(appFetakuvaaja
     main.cpp
-    backend.cpp
-    screenrecord.cpp
 )
 
-qt_add_qml_module(appFetakuvaaja
+qt6_add_qml_module(appFetakuvaaja
     URI Fetakuvaaja
     VERSION 1.0
-    QML_FILES
+    RESOURCES
         Main.qml
+    SOURCES
+        backend.cpp
+        screenrecord.cpp
+        screenrecord.h
+        backend.h
 )
 
 set_target_properties(appFetakuvaaja PROPERTIES

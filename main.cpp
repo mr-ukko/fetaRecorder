@@ -1,4 +1,3 @@
-#include <iostream>
 #undef new
 #include <QGuiApplication>
 #include <QCoreApplication>

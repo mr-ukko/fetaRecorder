@@ -16,7 +16,7 @@ QTextStream& qStdOut()
 void BackEnd::handleButtonClick()
 {   
     d++;
-    qStdOut()<<"\nMethuk" <<d;
+    qDebug()<<"\nMethuk: " <<d;
 }
 
 void BackEnd::testSS()
